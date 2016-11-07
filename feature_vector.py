@@ -78,16 +78,24 @@ complete_crime_counts = {}
 
 #Read in the information
 with open('initial_data_bins.csv', 'r') as csvfile:
+
+    #Pull in the data
     plots = csv.reader(csvfile)
+
+    #Loop through each row
     for index, row in enumerate(plots):
+
+        #Parse out the unique identifier
         current_string = row[4] + '-' + row[8] + '-' + row[9]
+
+        #Check if it exists already in the dictionary
         if (not current_string in complete_crime_counts):
             #TIME | BIN | STREETCRIME | BURGLARY | AUTO | TOTAL
             #Update the dictionary with the count for the current type
 
+            #Extract the current crime type from the row
             crime_type = row[2]
 
-            
             current_row_data = ['time', 'bin', 'street_crime_int', 'burg_int', 'auto_int', 'total_int']
 
             if (crime_type in STREET_CRIME_TYPES):
