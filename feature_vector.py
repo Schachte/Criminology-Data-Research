@@ -96,15 +96,47 @@ with open('initial_data_bins.csv', 'r') as csvfile:
             #Extract the current crime type from the row
             crime_type = row[2]
 
-            current_row_data = ['time', 'bin', 'street_crime_int', 'burg_int', 'auto_int', 'total_int']
+            #date | x_bin | y_bin | street_crime | burglary_crime | auto_crime | other | total_crime
+            current_row_data = [row[4], row[8], row[9], 0, 0, 0, 0, 0]
 
             if (crime_type in STREET_CRIME_TYPES):
+                '''STREET CRIME'''
+                current_row_data[3] += 1
             elif (crime_type in BURGLARY_TYPES):
+                '''BURGLARY CRIME'''
+                current_row_data[4] += 1
             elif (crime_type in AUTO_THEFT_TYPES):
+                '''AUTO-THEFT CRIME'''
+                current_row_data[5] += 1
+            else:
+                '''OTHER'''
+                current_row_data[6] += 1
 
-            complete_crime_counts[current_string] = [1]
+            #Update the total crime count for the date/bin
+            current_row_data[7] += 1
+
+            complete_crime_counts[current_string] = current_row_data
         else:
-            print(complete_crime_counts[current_string][0])
-            # increment_string =
-            # complete_crime_counts[current_string] += 1
-            print('')
+
+            #Extract the current crime type from the row
+            crime_type = row[2]
+
+            current_row_data = complete_crime_counts[current_string]
+
+            if (crime_type in STREET_CRIME_TYPES):
+                '''STREET CRIME'''
+                current_row_data[3] += 1
+            elif (crime_type in BURGLARY_TYPES):
+                '''BURGLARY CRIME'''
+                current_row_data[4] += 1
+            elif (crime_type in AUTO_THEFT_TYPES):
+                '''AUTO-THEFT CRIME'''
+                current_row_data[5] += 1
+            else:
+                '''OTHER'''
+                current_row_data[6] += 1
+
+            #Update the total crime count for the date/bin
+            current_row_data[7] += 1
+
+            complete_crime_counts[current_string] = current_row_data
