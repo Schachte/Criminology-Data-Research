@@ -139,4 +139,11 @@ with open('initial_data_bins.csv', 'r') as csvfile:
             #Update the total crime count for the date/bin
             current_row_data[7] += 1
 
+            #Update the
             complete_crime_counts[current_string] = current_row_data
+
+
+with open('countable_data.csv', 'w') as mycsvfile:
+    thedatawriter = csv.writer(mycsvfile)
+    for row in complete_crime_counts:
+        thedatawriter.writerow(complete_crime_counts[row])
