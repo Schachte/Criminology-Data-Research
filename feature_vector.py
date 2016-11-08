@@ -142,8 +142,10 @@ with open('initial_data_bins.csv', 'r') as csvfile:
             #Update the
             complete_crime_counts[current_string] = current_row_data
 
-
+#Store the updated CSV with counts
 with open('countable_data.csv', 'w') as mycsvfile:
+    header = 'date,xbin,ybin,street_crime,burglary_crime,auto_crime,other,total_crime'
     thedatawriter = csv.writer(mycsvfile)
+    thedatawriter.writerow(header)
     for row in complete_crime_counts:
         thedatawriter.writerow(complete_crime_counts[row])
