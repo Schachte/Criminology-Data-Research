@@ -49,16 +49,31 @@ class Feature_Vector:
         16) Past year 2014
         17) Past year 2013
         18) Past year 2012
-        19) All time
-        20) All week
-        21) All month
-        22) All year
+        19) All week = All time
+        20) All month
+        21) All year
+
+        Radii 1
+
+        Features 22 - 39
+        In same order starting with current week 2016
+
+        Radii 2
+
+        Features 40 - 57
+        same order as above
+
+        Radii 3
+
+        Features 58 - 75
+        same order as above
+
         '''
 
         for x in range(0, 359):
             for y in range(0, 359):
                 for week in range(0, 53):
-                    self.feature_dict[(x, y, week)] = [0] * 22
+                    self.feature_dict[(x, y, week)] = [0] * 75
                     self.feature_dict[(x, y, week)][0] = x
                     self.feature_dict[(x, y, week)][1] = y
                     self.feature_dict[(x, y, week)][2] = week
@@ -96,22 +111,114 @@ class Feature_Vector:
 
                 sum_total_call = sum(row[3:])
 
-                self.update_week(row[1], row[2], int(wk_no), date_data[2], sum_total_call)
+                self.update_week(row[1], row[2], int(wk_no), date_data[2], sum_total_call, 3)
+                self.update_month(row[1], row[2], int(wk_no), date_data[2], sum_total_call, 8)
+                self.update_year(row[1], row[2], int(wk_no), date_data[2], sum_total_call, 13)
+
+        self.update_sum_features()
+
+        self.calc_radii()
+
+    def calc_radii(self):
+        count = 0
+        print "HELLO"
+        for x in range(0, 359):
+            for y in range(0, 359):
+                for week in range(0, 53):
+                    #calc Radius for that xbin ybin
+                    self.radius_calculation(x,y,week,3)
+                    count += 1
+                    print count
 
 
-    def update_week(self, xbin, ybin, wk_no, yr, total_call):
+    def radius_calculation(self, xbin, ybin, wk, radii): # I am counting myself into radius calculations -- make sure take out 0,0 case for that case
+        for i in range(0,18):
+            for current_radius in range(1, radii + 1):
+                for y_range in range(0,current_radius+1):
+                    for x_range in range(0,current_radius+1):
+                        offset = 3 + 18*current_radius
+                        if (x_range == 0 and y_range == 0):
+                            self.feature_dict[(xbin, ybin, wk)][i+offset] += self.feature_dict[(xbin+x_range, ybin+y_range, wk)][i + 3]
+                        else:
+                            if (xbin + x_range >= 0 and ybin + y_range >= 0 and xbin + x_range < 359 and ybin+y_range < 359): #only update if it wont give index out of bounds
+                                self.feature_dict[(xbin, ybin, wk)][i + offset] += self.feature_dict[(xbin+x_range, ybin+y_range, wk)][i + 3]
+
+                            if(xbin - x_range >= 0 and ybin - y_range >= 0 and xbin - x_range < 359 and ybin - y_range < 359): #only update if it wont give index out of bounds
+                                self.feature_dict[(xbin, ybin, wk)][i + offset] += self.feature_dict[(xbin - x_range, ybin - y_range, wk)][i + 3]
+
+
+    def update_sum_features(self):
+        week_index = 19
+        month_index = 20
+        year_index = 21
+
+        for x in range(0, 359):
+            for y in range(0, 359):
+                for week in range(0, 53):
+                    self.feature_dict[(x, y, week)][18] = (self.feature_dict[(x, y, week)][3] + self.feature_dict[(x, y, week)][4]+
+                                                        self.feature_dict[(x, y, week)][5]+self.feature_dict[(x, y, week)][6]+
+                                                        self.feature_dict[(x, y, week)][7])
+
+                    self.feature_dict[(x, y, week)][19] = (self.feature_dict[(x, y, week)][8] + self.feature_dict[(x, y, week)][9] +
+                                                        self.feature_dict[(x, y, week)][10] + self.feature_dict[(x, y, week)][11] +
+                                                        self.feature_dict[(x, y, week)][12])
+
+                    self.feature_dict[(x, y, week)][20] = (self.feature_dict[(x, y, week)][13] + self.feature_dict[(x, y, week)][14]+
+                                                        self.feature_dict[(x, y, week)][15]+self.feature_dict[(x, y, week)][16]+
+                                                        self.feature_dict[(x, y, week)][17])
+
+
+    def update_week(self, xbin, ybin, wk_no, yr, total_call, feature_location):
         '''Update the total call sum for each respective week'''
 
         if(yr == '2016'):
-            self.feature_dict[(xbin, ybin, wk_no)][3] += total_call
+            self.feature_dict[(xbin, ybin, wk_no)][feature_location] += total_call
         elif(yr == '2015'):
-            self.feature_dict[(xbin, ybin, wk_no)][4] += total_call
+            self.feature_dict[(xbin, ybin, wk_no)][feature_location+1] += total_call
         elif(yr == '2014'):
-            self.feature_dict[(xbin, ybin, wk_no)][5] += total_call
+            self.feature_dict[(xbin, ybin, wk_no)][feature_location+2] += total_call
         elif(yr == '2013'):
-            self.feature_dict[(xbin, ybin, wk_no)][6] += total_call
+            self.feature_dict[(xbin, ybin, wk_no)][feature_location+3] += total_call
         else:
-            self.feature_dict[(xbin, ybin, wk_no)][7] += total_call
+            self.feature_dict[(xbin, ybin, wk_no)][feature_location+4] += total_call
+
+    def get_weeks_to_update(self,wk_no, weeks_forward):
+        week_vector = []
+        for x in range(1,weeks_forward+1): #generates an array with the weeks we will update
+            appender = wk_no + x
+            week_vector.append(appender)
+
+        for index in range(0, len(week_vector)): #makes sure we deal with the case we are updating weeks 1-4 for week 52 data
+            if week_vector[index] > 52:
+                week_vector[index] -= 53
+
+
+        return week_vector
+
+
+    def update_month(self, xbin, ybin, wk_no, yr, total_call, feature_location):
+
+        weeks_to_update = self.get_weeks_to_update(wk_no, 4)
+        for item in weeks_to_update:
+            self.update_week(xbin, ybin, item, yr, total_call, feature_location)
+
+
+    def update_year(self, xbin, ybin, wk_no, yr, total_call, feature_location):
+
+        weeks_to_update = self.get_weeks_to_update(wk_no, 12)
+
+        for item in weeks_to_update:
+            self.update_week(xbin, ybin, item, yr, total_call, feature_location)
+
+
+    def write_to_file(self):
+        with open('update_feature_vector.csv', 'w') as mycsvfile:
+            thedatawriter = csv.writer(mycsvfile)
+            for row in self.feature_dict:
+                thedatawriter.writerow(self.feature_dict[row])
+
+
+
 
 def main():
     fv = Feature_Vector(0)
@@ -121,6 +228,10 @@ def main():
     csv_file = fv.load_file('countable_data.csv')
 
     fv.get_call_count(csv_file)
+
+    fv.write_to_file()
+
+
 
 
 if __name__ == "__main__":
