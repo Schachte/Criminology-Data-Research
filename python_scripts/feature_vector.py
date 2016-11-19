@@ -17,6 +17,7 @@ Portland Dictionary Initialization    *
 import csv
 import math
 import datetime
+import time
 
 class Feature_Vector:
     '''Calculate the radius R = r'''
@@ -78,9 +79,14 @@ class Feature_Vector:
                     self.feature_dict[(x, y, week)][1] = y
                     self.feature_dict[(x, y, week)][2] = week
 
+        print('\n\n\n\nDATA INITIALIZED!\n\n\n\n')
+
 
     def load_file(self, file, col_max):
         '''Load the data'''
+
+        print('\n\n\n\nLOADING DATA!\n\n\n\n')
+
         data_set = []
         with open(file, 'r') as mycsvfile:
             reader = csv.reader(mycsvfile)
@@ -90,6 +96,8 @@ class Feature_Vector:
                     item[x] = int(item[x]) #change everything to int
                 data_set.append(item)
 
+        print('\n\n\n\nDATA LOADED!\n\n\n\n')
+
         return data_set
 
     def get_call_count(self, old_data, lookup_dict):
@@ -98,17 +106,18 @@ class Feature_Vector:
         YEARS = [16,15,14,13,12]
 
         for index, row in enumerate(old_data):
+
             if(not(row[0]=='0')):
                 date_data = row[0].split('/')
 
                 date_data[2] = '20' + date_data[2]
 
                 beginning_year = datetime.date(int(date_data[2]), 1, 1 )
-
                 current_date = datetime.date(int(date_data[2]), int(date_data[0]), int(date_data[1]))
+                current_date_string = current_date.strftime('%-m/%-d/%Y')
 
-                wk_no = lookup_dict[row[0]][0]
-                yr_no = lookup_dict[row[0]][1]
+                wk_no = lookup_dict[current_date_string][0]
+                yr_no = lookup_dict[current_date_string][1]
 
                 sum_total_call = sum(row[3:])
 
@@ -118,17 +127,19 @@ class Feature_Vector:
 
         self.update_sum_features()
 
+        print("\n\nRADIUS 0 COMPUTATION COMPLETE\n\n")
+
         self.calc_radii()
 
     def calc_radii(self):
         count = 0
         for x in range(0, 359):
+            print("%.4f COMPLETE"%((float(x)/359)*100))
             for y in range(0, 359):
                 for week in range(0, 53):
                     #calc Radius for that xbin ybin
                     self.radius_calculation(x,y,week,3)
                     count += 1
-                    print count
 
 
     def radius_calculation(self, xbin, ybin, wk, radii): # I am counting myself into radius calculations -- make sure take out 0,0 case for that case
@@ -234,15 +245,13 @@ class Feature_Vector:
 def main():
     fv = Feature_Vector(0)
 
+
     fv.initialize_feature_dict()
 
     csv_file = fv.load_file('countable_data.csv', 8)
     lookup_file = fv.load_file('../date_lookup_table.csv', 3)
-
     lookup_dict = fv.lookup_to_dict(lookup_file)
 
-    print(lookup_dict['3/15/2012'])
-    print(len(lookup_dict))
 
     fv.get_call_count(csv_file, lookup_dict)
     fv.write_to_file()
