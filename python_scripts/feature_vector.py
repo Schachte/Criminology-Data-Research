@@ -79,20 +79,20 @@ class Feature_Vector:
                     self.feature_dict[(x, y, week)][2] = week
 
 
-    def load_file(self, file):
+    def load_file(self, file, col_max):
         '''Load the data'''
         data_set = []
         with open(file, 'r') as mycsvfile:
             reader = csv.reader(mycsvfile)
             reader = list(reader)[1:]
             for item in reader:
-                for x in range(1,8):
+                for x in range(1,col_max):
                     item[x] = int(item[x]) #change everything to int
                 data_set.append(item)
 
         return data_set
 
-    def get_call_count(self, old_data):
+    def get_call_count(self, old_data, lookup_dict):
         '''Count the calls for each param'''
 
         YEARS = [16,15,14,13,12]
@@ -107,13 +107,14 @@ class Feature_Vector:
 
                 current_date = datetime.date(int(date_data[2]), int(date_data[0]), int(date_data[1]))
 
-                wk_no = math.floor((current_date-beginning_year).days/7)
+                wk_no = lookup_dict[row[0]][0]
+                yr_no = lookup_dict[row[0]][1]
 
                 sum_total_call = sum(row[3:])
 
-                self.update_week(row[1], row[2], int(wk_no), date_data[2], sum_total_call, 3)
-                self.update_month(row[1], row[2], int(wk_no), date_data[2], sum_total_call, 8)
-                self.update_year(row[1], row[2], int(wk_no), date_data[2], sum_total_call, 13)
+                self.update_week(row[1], row[2], wk_no, yr_no, sum_total_call, 3)
+                self.update_month(row[1], row[2], wk_no, yr_no, sum_total_call, 8)
+                self.update_year(row[1], row[2], wk_no, yr_no, sum_total_call, 13)
 
         self.update_sum_features()
 
@@ -121,7 +122,6 @@ class Feature_Vector:
 
     def calc_radii(self):
         count = 0
-        print "HELLO"
         for x in range(0, 359):
             for y in range(0, 359):
                 for week in range(0, 53):
@@ -218,6 +218,17 @@ class Feature_Vector:
                 thedatawriter.writerow(self.feature_dict[row])
 
 
+    def lookup_to_dict(self, lookup_csv):
+        '''Converts CSV to readable dictionary'''
+
+        lookup_dict = {}
+
+        #DAY WK_NO YR
+        for line in lookup_csv:
+            lookup_dict[line[0]] = line[1:]
+
+        return lookup_dict
+
 
 
 def main():
@@ -225,12 +236,16 @@ def main():
 
     fv.initialize_feature_dict()
 
-    csv_file = fv.load_file('countable_data.csv')
+    csv_file = fv.load_file('countable_data.csv', 8)
+    lookup_file = fv.load_file('../date_lookup_table.csv', 3)
 
-    fv.get_call_count(csv_file)
+    lookup_dict = fv.lookup_to_dict(lookup_file)
 
+    print(lookup_dict['3/15/2012'])
+    print(len(lookup_dict))
+
+    fv.get_call_count(csv_file, lookup_dict)
     fv.write_to_file()
-
 
 
 
