@@ -162,11 +162,11 @@ class Feature_Vector:
                             if (not x_range == 0 and not y_range == 0):
 
                                 #Taken care of (1, -1)
-                                if (xbin + x_range >= 0 and ybin + y_range >= 0 and xbin + x_range < 359 and ybin+y_range < 359): #only update if it wont give index out of bounds
+                                if (xbin + x_range >= 0 and ybin - y_range >= 0 and xbin + x_range < 359 and ybin-y_range < 359): #only update if it wont give index out of bounds
                                     self.feature_dict[(xbin, ybin, wk)][i + offset] += self.feature_dict[(xbin+x_range, ybin-y_range, wk)][i + 3]
 
                                 #Taken care of (-1, 1)
-                                if(xbin - x_range >= 0 and ybin - y_range >= 0 and xbin - x_range < 359 and ybin - y_range < 359): #only update if it wont give index out of bounds
+                                if(xbin - x_range >= 0 and ybin + y_range >= 0 and xbin - x_range < 359 and ybin + y_range < 359): #only update if it wont give index out of bounds
                                     self.feature_dict[(xbin, ybin, wk)][i + offset] += self.feature_dict[(xbin - x_range, ybin + y_range, wk)][i + 3]
 
     def update_sum_features(self):
