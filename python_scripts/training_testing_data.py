@@ -38,7 +38,7 @@ from cmath import sqrt
  67-70: Identifying data
  71: Classification
 '''
-def get_feature_vectors(year, god_vector_this_week, god_vector_last_week, god_vector_2_weeks, god_vector_next_week):
+def get_feature_vectors(year, god_vector_this_week, god_vector_last_week, god_vector_2_weeks, god_vector_next_week, classifier_limit):
     this_year_features = []
     year2 = year
     year1 = year
@@ -52,7 +52,6 @@ def get_feature_vectors(year, god_vector_this_week, god_vector_last_week, god_ve
 
     if god_vector_this_week[2] >= 51:
         yearf = year - 1
-
 
     #Add week data to feature vector
     this_year_features.append(god_vector_2_weeks[year2])         #2 weeks ago (most recent data)
@@ -168,7 +167,7 @@ def get_feature_vectors(year, god_vector_this_week, god_vector_last_week, god_ve
 
     #Add class
     classification = 0
-    if god_vector_this_week[year] > 6:                  #classified as a hot spot if weekly crime
+    if god_vector_this_week[year] > classifier_limit:   #classified as a hot spot if weekly crime
         classification = 1                              #exceeds two standard deviations above the mean
 
     this_year_features.append(classification)
@@ -198,8 +197,11 @@ def get_crime_mean(feature_vector):
 
     for x in feature_vector:
         if feature_vector[x][18] != 0:
-            total_sum += feature_vector[x][3]
-            count += 1
+            total_sum += feature_vector[x][4] + feature_vector[x][5] + feature_vector[x][6]+ feature_vector[x][7]
+            count += 4
+            if feature_vector[x][2] <= 25:
+                total_sum += feature_vector[x][3]
+                count += 1
 
     avg = total_sum / count
 
@@ -215,8 +217,12 @@ def get_crime_standard_deviation(feature_vector, avg):
 
     for x in feature_vector:
         if feature_vector[x][18] != 0:
-            total_sum += (feature_vector[x][3]-avg)**2
-            count += 1
+            total_sum += (feature_vector[x][4]-avg)**2 + (feature_vector[x][5]-avg)**2 + (feature_vector[x][6]-avg)**2 + (feature_vector[x][7]-avg)**2
+            count += 4
+            if feature_vector[x][2] <= 25:
+                total_sum += (feature_vector[x][4]-avg)**2
+                count += 1
+
 
     return math.sqrt(total_sum / count)
 
@@ -231,8 +237,10 @@ def get_crime_stats(feature_vector):
     stdev = get_crime_standard_deviation(feature_vector, avg)
     print stdev
 
+    return avg + (2*stdev)
 
-def write_features_to_file(feature_vector):
+
+def write_features_to_file(feature_vector, classifier_limit):
     with open('test_train_data.csv', 'w') as mycsvfile:
         thedatawriter = csv.writer(mycsvfile)
         for row in feature_vector:
@@ -249,31 +257,4 @@ def write_features_to_file(feature_vector):
                 god_vector_2_weeks = feature_vector[(xbin, ybin, (weeknum - 2) % 52,)]
                 god_vector_next_week = feature_vector[(xbin, ybin, (weeknum + 1) % 52,)]
 
-
-                year_2015 = get_feature_vectors(4, god_vector_this_week, god_vector_last_week, god_vector_2_weeks, god_vector_next_week)
-                thedatawriter.writerow(year_2015)
-
-                if weeknum < 34:
-                    year_2016 = get_feature_vectors(3, god_vector_this_week, god_vector_last_week, god_vector_2_weeks, god_vector_next_week)
-                    thedatawriter.writerow(year_2016)
-
-
-                if weeknum > 8:
-                    year_2014 = get_feature_vectors(5, god_vector_this_week, god_vector_last_week, god_vector_2_weeks, god_vector_next_week)
-                    thedatawriter.writerow(year_2014)
-
-
-
-
-def main():
-
-
-    feature_vector = open_the_file()
-    print 'File opened'
-
-    write_features_to_file(feature_vector)
-
-
-
-if __name__ == '__main__':
-    main()
+                year_2014 = get_feature_vectors(5, god_vector_this_week, god_vector_last_week, god_vector_2_weeks, god_vector_next_week, classifier_limit)
