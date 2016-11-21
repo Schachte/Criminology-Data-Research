@@ -2,7 +2,7 @@
 @Code
 ***************************************
 Criminology Data Set                  *
-Portland Dictionary Initialization    *
+Training and Testing Dataset Creation *
 ***************************************
 
 @Authors
@@ -12,253 +12,293 @@ Portland Dictionary Initialization    *
     * Trevor Richardson
 
 @Purpose
-    * Calculate the radius R = r
+    * Take the feature dictionary and produce feature
+    * vectors from it for training and testing
 '''
+
 import csv
 import math
 import datetime
-import time
+from audioop import avg
+from cmath import sqrt
 
-class Feature_Vector:
-    '''Calculate the radius R = r'''
+'''
+ Creates the feature vector given the appropriate god vectors
+ Note: 'Current' year is given by the following:
+ 2016: 3
+ 2015: 4
+ 2014: 5
 
-    def __init__(self, radius):
-        self.radius = radius
-        self.feature_dict = {}
+ Structure is as follows:
+ 0-15: radius 0 data (see code for data points)
+ 16-31: radius 1 data
+ 32-47: radius 2 data
+ 48-63: radius 3 data
+ 64-75: All-time data
+ 76-79: Identifying data
+ 80: Classification
+'''
+def get_feature_vectors(year, god_vector_this_week, god_vector_last_week, god_vector_2_weeks, god_vector_next_week, classifier_limit):
+    month_offset = 5
+    year_offset = 10
+    radii_offset = 18
 
-    def initialize_feature_dict(self):
-        '''Init the feature vector'''
+    this_year_features = []
+    year2 = year
+    year1 = year
+    yearf = year
 
-        '''
-        STRUCTURE FOR THE FEATURE VECTOR
+    if god_vector_this_week[2] <= 0:
+        year1 = year + 1
 
-        0) Xbin
-        1) Ybin
-        2) Week
-        3) Current week 2016
-        4) Current week 2015
-        5) Current week 2014
-        6) Current week 2013
-        7) Current week 2012
-        8) Past month 2016
-        9) Past month 2015
-        10) Past month 2014
-        11) Past month 2013
-        12) Past month 2012
-        13) Past year 2016
-        14) Past year 2015
-        15) Past year 2014
-        16) Past year 2013
-        17) Past year 2012
-        18) All week = All time
-        19) All month
-        20) All year
+    if god_vector_this_week[2] <= 1:
+        year2 = year + 1
 
-        Radii 1
+    if god_vector_this_week[2] >= 51:
+        yearf = year - 1
 
-        Features 21 - 38
-        In same order starting with current week 2016
-
-        Radii 2
-
-        Features 39 - 56
-        same order as above
-
-        Radii 3
-
-        Features 57 - 74
-        same order as above
-
-        '''
-
-        for x in range(0, 359):
-            for y in range(0, 359):
-                for week in range(0, 53):
-                    self.feature_dict[(x, y, week)] = [0] * 75
-                    self.feature_dict[(x, y, week)][0] = x
-                    self.feature_dict[(x, y, week)][1] = y
-                    self.feature_dict[(x, y, week)][2] = week
-
-        print('\n\n\n\nDATA INITIALIZED!\n\n\n\n')
+    #Add week data to feature vector
+    this_year_features.append(god_vector_2_weeks[year2])         #2 weeks ago (most recent data)
+    this_year_features.append(god_vector_2_weeks[year2 + 1])     #2 weeks ago (1 year ago)
+    this_year_features.append(god_vector_2_weeks[year2 + 2])     #2 weeks ago (2 years ago)
+    this_year_features.append(god_vector_last_week[year1 + 1])   #last week (1 year ago)
+    this_year_features.append(god_vector_last_week[year1 + 2])   #last week (2 years ago)
+    this_year_features.append(god_vector_this_week[year + 1])   #this week (1 year ago)
+    this_year_features.append(god_vector_this_week[year + 2])   #this week (2 years ago)
+    this_year_features.append(god_vector_next_week[yearf + 1])   #next week (1 year ago)
+    this_year_features.append(god_vector_next_week[yearf + 2])   #next week (2 years ago)
 
 
-    def load_file(self, file, col_max):
-        '''Load the data'''
+    #Add month data to feature vector
+    this_year_features.append(god_vector_2_weeks[year2 + month_offset])         #last month, 2 weeks ago (most recent data)
+    this_year_features.append(god_vector_2_weeks[year2 + month_offset + 1])     #last month, 2 weeks ago (1 year ago)
+    this_year_features.append(god_vector_2_weeks[year2 + month_offset + 2])     #last month, 2 weeks ago (2 years ago)
+    this_year_features.append(god_vector_next_week[yearf + month_offset + 1])   #last month, next week (1 year ago)
+    this_year_features.append(god_vector_next_week[yearf + month_offset + 2])   #last month, next week (2 years ago)
 
-        print('\n\n\n\nLOADING DATA!\n\n\n\n')
-
-        data_set = []
-        with open(file, 'r') as mycsvfile:
-            reader = csv.reader(mycsvfile)
-            reader = list(reader)[1:]
-            for item in reader:
-                for x in range(1,col_max):
-                    item[x] = int(item[x]) #change everything to int
-                data_set.append(item)
-
-        print('\n\n\n\nDATA LOADED!\n\n\n\n')
-
-        return data_set
-
-    def get_call_count(self, old_data, lookup_dict):
-        '''Count the calls for each param'''
-
-        YEARS = [16,15,14,13,12]
-
-        for index, row in enumerate(old_data):
-
-            if(not(row[0]=='0')):
-                date_data = row[0].split('/')
-
-                date_data[2] = '20' + date_data[2]
-
-                beginning_year = datetime.date(int(date_data[2]), 1, 1 )
-                current_date = datetime.date(int(date_data[2]), int(date_data[0]), int(date_data[1]))
-                current_date_string = current_date.strftime('%-m/%-d/%Y')
-
-                wk_no = lookup_dict[current_date_string][0]
-                yr_no = lookup_dict[current_date_string][1]
-
-                sum_total_call = row[7]
-
-                self.update_week(row[1], row[2], wk_no, yr_no, sum_total_call, 3)
-                self.update_month(row[1], row[2], wk_no, yr_no, sum_total_call, 8)
-                self.update_year(row[1], row[2], wk_no, yr_no, sum_total_call, 13)
-
-        self.update_sum_features()
-
-        print("\n\nRADIUS 0 COMPUTATION COMPLETE\n\n")
-
-        self.calc_radii()
-
-    def calc_radii(self):
-        for x in range(0, 359):
-            print("%.4f COMPLETE"%((float(x)/359)*100))
-            for y in range(0, 359):
-                for week in range(0, 53):
-                    #calc Radius for that xbin ybin
-                    self.radius_calculation(x,y,week,3)
-
-    def radius_calculation(self, xbin, ybin, wk, radii): # I am counting myself into radius calculations -- make sure take out 0,0 case for that case
-        for i in range(0,18):
-            for current_radius in range(1, radii + 1):
-                for y_range in range(0,current_radius+1):
-                    for x_range in range(0,current_radius+1):
-                        offset = 3 + 18*current_radius
-
-                        #Taken care of (0, 0)
-                        if (x_range == 0 and y_range == 0):
-                            self.feature_dict[(xbin, ybin, wk)][i+offset] += self.feature_dict[(xbin+x_range, ybin+y_range, wk)][i + 3]
-                        else:
-                            #Taken care of (0, 1), (1, 1), (1, 0)
-                            if (xbin + x_range >= 0 and ybin + y_range >= 0 and xbin + x_range < 359 and ybin+y_range < 359): #only update if it wont give index out of bounds
-                                self.feature_dict[(xbin, ybin, wk)][i + offset] += self.feature_dict[(xbin+x_range, ybin+y_range, wk)][i + 3]
-
-                            #Taken care of (0, -1), (-1, -1), (-1, 0)
-                            if(xbin - x_range >= 0 and ybin - y_range >= 0 and xbin - x_range < 359 and ybin - y_range < 359): #only update if it wont give index out of bounds
-                                self.feature_dict[(xbin, ybin, wk)][i + offset] += self.feature_dict[(xbin - x_range, ybin - y_range, wk)][i + 3]
+    #Add Year data to feature vector
+    this_year_features.append(god_vector_2_weeks[year2 + year_offset])         #1 year as of 2 weeks ago (most recent data)
+    this_year_features.append(god_vector_this_week[year + year_offset + 1])   #2 years ago as of this week
 
 
-                            if (not x_range == 0 and not y_range == 0):
-
-                                #Taken care of (1, -1)
-                                if (xbin + x_range >= 0 and ybin - y_range >= 0 and xbin + x_range < 359 and ybin-y_range < 359): #only update if it wont give index out of bounds
-                                    self.feature_dict[(xbin, ybin, wk)][i + offset] += self.feature_dict[(xbin+x_range, ybin-y_range, wk)][i + 3]
-
-                                #Taken care of (-1, 1)
-                                if(xbin - x_range >= 0 and ybin + y_range >= 0 and xbin - x_range < 359 and ybin + y_range < 359): #only update if it wont give index out of bounds
-                                    self.feature_dict[(xbin, ybin, wk)][i + offset] += self.feature_dict[(xbin - x_range, ybin + y_range, wk)][i + 3]
-
-    def update_sum_features(self):
-        week_index = 18
-        month_index = 19
-        year_index = 20
-
-        for x in range(0, 359):
-            for y in range(0, 359):
-                for week in range(0, 53):
-                    self.feature_dict[(x, y, week)][week_index] = (self.feature_dict[(x, y, week)][3] + self.feature_dict[(x, y, week)][4]+
-                                                        self.feature_dict[(x, y, week)][5]+self.feature_dict[(x, y, week)][6]+
-                                                        self.feature_dict[(x, y, week)][7])
-
-                    self.feature_dict[(x, y, week)][month_index] = (self.feature_dict[(x, y, week)][8] + self.feature_dict[(x, y, week)][9] +
-                                                        self.feature_dict[(x, y, week)][10] + self.feature_dict[(x, y, week)][11] +
-                                                        self.feature_dict[(x, y, week)][12])
-
-                    self.feature_dict[(x, y, week)][year_index] = (self.feature_dict[(x, y, week)][13] + self.feature_dict[(x, y, week)][14]+
-                                                        self.feature_dict[(x, y, week)][15]+self.feature_dict[(x, y, week)][16]+
-                                                        self.feature_dict[(x, y, week)][17])
+    #Add radius 1 to feature vector
+    #Add week data to feature vector
+    this_year_features.append(god_vector_2_weeks[year2 + radii_offset])         #2 weeks ago (most recent data)
+    this_year_features.append(god_vector_2_weeks[year2 + radii_offset + 1])     #2 weeks ago (1 year ago)
+    this_year_features.append(god_vector_2_weeks[year2 + radii_offset + 2])     #2 weeks ago (2 years ago)
+    this_year_features.append(god_vector_last_week[year1 + radii_offset + 1])   #last week (1 year ago)
+    this_year_features.append(god_vector_last_week[year1 + radii_offset + 2])   #last week (2 years ago)
+    this_year_features.append(god_vector_this_week[year + radii_offset + 1])   #this week (1 year ago)
+    this_year_features.append(god_vector_this_week[year + radii_offset + 2])   #this week (2 years ago)
+    this_year_features.append(god_vector_next_week[yearf + radii_offset + 1])   #next week (1 year ago)
+    this_year_features.append(god_vector_next_week[yearf + radii_offset + 2])   #next week (2 years ago)
 
 
-    def update_week(self, xbin, ybin, wk_no, yr, total_call, feature_location):
-        '''Update the total call sum for each respective week'''
+    #Add month data to feature vector
+    this_year_features.append(god_vector_2_weeks[year2 + radii_offset + month_offset])         #last month, 2 weeks ago (most recent data)
+    this_year_features.append(god_vector_2_weeks[year2 + radii_offset + month_offset + 1])     #last month, 2 weeks ago (1 year ago)
+    this_year_features.append(god_vector_2_weeks[year2 + radii_offset + month_offset + 2])     #last month, 2 weeks ago (2 years ago)
+    this_year_features.append(god_vector_next_week[yearf + radii_offset + month_offset + 1])   #last month, next week (1 year ago)
+    this_year_features.append(god_vector_next_week[yearf + radii_offset + month_offset + 2])   #last month, next week (2 years ago)
 
-        if(yr == 2016):
-            self.feature_dict[(xbin, ybin, wk_no)][feature_location] += total_call
-        elif(yr == 2015):
-            self.feature_dict[(xbin, ybin, wk_no)][feature_location+1] += total_call
-        elif(yr == 2014):
-            self.feature_dict[(xbin, ybin, wk_no)][feature_location+2] += total_call
-        elif(yr == 2013):
-            self.feature_dict[(xbin, ybin, wk_no)][feature_location+3] += total_call
-        elif(yr == 2012):
-            self.feature_dict[(xbin, ybin, wk_no)][feature_location+4] += total_call
+    #Add Year data to feature vector
+    this_year_features.append(god_vector_2_weeks[year2 + radii_offset + year_offset])         #1 year as of 2 weeks ago (most recent data)
+    this_year_features.append(god_vector_this_week[year + radii_offset + year_offset + 1])   #2 years ago as of this week
 
 
-    def get_weeks_to_update(self,wk_no, weeks_forward):
-        week_vector = []
-        for x in range(1,weeks_forward+1): #generates an array with the weeks we will update
-            appender = [(wk_no + x)%53, (wk_no + x)/53]
-            week_vector.append(appender)
-
-        return week_vector
-
-    def update_month(self, xbin, ybin, wk_no, yr, total_call, feature_location):
-        '''Update the months for the dict'''
-
-        weeks_to_update = self.get_weeks_to_update(wk_no, 4)
-        for new_week_number, year_offset in weeks_to_update:
-            self.update_week(xbin, ybin, new_week_number, yr-year_offset, total_call, feature_location)
-
-    def update_year(self, xbin, ybin, wk_no, yr, total_call, feature_location):
-        '''Update the year for the dict'''
-
-        weeks_to_update = self.get_weeks_to_update(wk_no, 51)
-
-        for new_week_number, year_offset in weeks_to_update:
-            self.update_week(xbin, ybin, new_week_number, yr-year_offset, total_call, feature_location)
-
-    def write_to_file(self):
-        with open('update_feature_vector.csv', 'w') as mycsvfile:
-            thedatawriter = csv.writer(mycsvfile)
-            for row in self.feature_dict:
-                thedatawriter.writerow(self.feature_dict[row])
+    #Add radius 2 to feature vector
+    #Add week data to feature vector
+    this_year_features.append(god_vector_2_weeks[year2 + radii_offset*2])         #2 weeks ago (most recent data)
+    this_year_features.append(god_vector_2_weeks[year2 + radii_offset*2 + 1])     #2 weeks ago (1 year ago)
+    this_year_features.append(god_vector_2_weeks[year2 + radii_offset*2 + 2])     #2 weeks ago (2 years ago)
+    this_year_features.append(god_vector_last_week[year1 + radii_offset*2 + 1])   #last week (1 year ago)
+    this_year_features.append(god_vector_last_week[year1 + radii_offset*2 + 2])   #last week (2 years ago)
+    this_year_features.append(god_vector_this_week[year + radii_offset*2 + 1])   #this week (1 year ago)
+    this_year_features.append(god_vector_this_week[year + radii_offset*2 + 2])   #this week (2 years ago)
+    this_year_features.append(god_vector_next_week[yearf + radii_offset*2 + 1])   #next week (1 year ago)
+    this_year_features.append(god_vector_next_week[yearf + radii_offset*2 + 2])   #next week (2 years ago)
 
 
-    def lookup_to_dict(self, lookup_csv):
-        '''Converts CSV to readable dictionary'''
+    #Add month data to feature vector
+    this_year_features.append(god_vector_2_weeks[year2 + radii_offset*2 + month_offset])         #last month, 2 weeks ago (most recent data)
+    this_year_features.append(god_vector_2_weeks[year2 + radii_offset*2 + month_offset + 1])     #last month, 2 weeks ago (1 year ago)
+    this_year_features.append(god_vector_2_weeks[year2 + radii_offset*2 + month_offset + 2])     #last month, 2 weeks ago (2 years ago)
+    this_year_features.append(god_vector_next_week[yearf + radii_offset*2 + month_offset + 1])   #last month, next week (1 year ago)
+    this_year_features.append(god_vector_next_week[yearf + radii_offset*2 + month_offset + 2])   #last month, next week (2 years ago)
 
-        lookup_dict = {}
-
-        #DAY WK_NO YR
-        for line in lookup_csv:
-            lookup_dict[line[0]] = line[1:]
-
-        return lookup_dict
+    #Add Year data to feature vector
+    this_year_features.append(god_vector_2_weeks[year2 + radii_offset*2 + year_offset])         #1 year as of 2 weeks ago (most recent data)
+    this_year_features.append(god_vector_this_week[year + radii_offset*2 + year_offset + 1])   #2 years ago as of this week
 
 
+    #Add radius 3 to feature vector
+    #Add week data to feature vector
+    this_year_features.append(god_vector_2_weeks[year2 + radii_offset*3])         #2 weeks ago (most recent data)
+    this_year_features.append(god_vector_2_weeks[year2 + radii_offset*3 + 1])     #2 weeks ago (1 year ago)
+    this_year_features.append(god_vector_2_weeks[year2 + radii_offset*3 + 2])     #2 weeks ago (2 years ago)
+    this_year_features.append(god_vector_last_week[year1 + radii_offset*3 + 1])   #last week (1 year ago)
+    this_year_features.append(god_vector_last_week[year1 + radii_offset*3 + 2])   #last week (2 years ago)
+    this_year_features.append(god_vector_this_week[year + radii_offset*3 + 1])   #this week (1 year ago)
+    this_year_features.append(god_vector_this_week[year + radii_offset*3 + 2])   #this week (2 years ago)
+    this_year_features.append(god_vector_next_week[yearf + radii_offset*3 + 1])   #next week (1 year ago)
+    this_year_features.append(god_vector_next_week[yearf + radii_offset*3 + 2])   #next week (2 years ago)
+
+
+    #Add month data to feature vector
+    this_year_features.append(god_vector_2_weeks[year2 + radii_offset*3 + month_offset])         #last month, 2 weeks ago (most recent data)
+    this_year_features.append(god_vector_2_weeks[year2 + radii_offset*3 + month_offset + 1])     #last month, 2 weeks ago (1 year ago)
+    this_year_features.append(god_vector_2_weeks[year2 + radii_offset*3 + month_offset + 2])     #last month, 2 weeks ago (2 years ago)
+    this_year_features.append(god_vector_next_week[yearf + radii_offset*3 + month_offset + 1])   #last month, next week (1 year ago)
+    this_year_features.append(god_vector_next_week[yearf + radii_offset*3 + month_offset + 2])   #last month, next week (2 years ago)
+
+    #Add Year data to feature vector
+    this_year_features.append(god_vector_2_weeks[year2 + radii_offset*3 + year_offset])         #1 year as of 2 weeks ago (most recent data)
+    this_year_features.append(god_vector_this_week[year + radii_offset*3 + year_offset + 1])   #2 years ago as of this week
+
+
+    #Add all time to feature vector
+    this_year_features.append(god_vector_this_week[18])     #all weeks
+    this_year_features.append(god_vector_this_week[19])     #all months
+    this_year_features.append(god_vector_this_week[20])     #all time
+
+    this_year_features.append(god_vector_this_week[18 + radii_offset])     #all weeks radius 1
+    this_year_features.append(god_vector_this_week[19 + radii_offset])     #all months radius 1
+    this_year_features.append(god_vector_this_week[20 + radii_offset])     #all time radius 1
+
+    this_year_features.append(god_vector_this_week[18 + radii_offset*2])     #all weeks radius 2
+    this_year_features.append(god_vector_this_week[19 + radii_offset*2])     #all months radius 2
+    this_year_features.append(god_vector_this_week[20 + radii_offset*2])     #all time radius 2
+
+    this_year_features.append(god_vector_this_week[18 + radii_offset*3])     #all weeks radius 3
+    this_year_features.append(god_vector_this_week[19 + radii_offset*3])     #all months radius 3
+    this_year_features.append(god_vector_this_week[20 + radii_offset*3])     #all time radius 3
+
+
+    #Add identifying data
+    this_year_features.append(god_vector_this_week[0])  #xbin
+    this_year_features.append(god_vector_this_week[1])  #ybin
+    this_year_features.append(god_vector_this_week[2])  #week number
+    this_year_features.append(2019 - year)              #year
+
+
+    #Add class
+    classification = 0
+    if god_vector_this_week[year] > classifier_limit:   #classified as a hot spot if weekly crime
+        classification = 1                              #exceeds two standard deviations above the mean
+
+    this_year_features.append(classification)
+
+    return this_year_features
+
+
+def open_the_file():
+    feature_vector = {}
+    with open('update_feature_vector.csv', 'rb') as myfile:
+        thedatareader = csv.reader(myfile, delimiter=',')
+        for row in thedatareader:
+            newRow = [float(x) for x in row]
+            key = (int(newRow[0]), int(newRow[1]), int(newRow[2]))
+            feature_vector[key] = newRow
+
+    return feature_vector
+
+'''
+Gets the mean of all areas which have had crime since 2012
+result: 1.24030983454  (ran on 11/18/16)
+'''
+def get_crime_mean(feature_vector):
+    total_sum = 0.0
+    count = 0
+
+
+    for x in feature_vector:
+        if feature_vector[x][20] != 0:
+            total_sum += feature_vector[x][4] + feature_vector[x][5] + feature_vector[x][6]+ feature_vector[x][7]
+            count += 4
+            if feature_vector[x][2] <= 25:
+                total_sum += feature_vector[x][3]
+                count += 1
+
+    avg = total_sum / count
+
+    return avg
+
+'''
+gets the standard deviation for all areas which have had crime since 2012
+result: 2.64611157716 (ran on 11/18/16)
+'''
+def get_crime_standard_deviation(feature_vector, avg):
+    total_sum = 0.0
+    count = 0
+
+    for x in feature_vector:
+        if feature_vector[x][20] != 0:
+            total_sum += (feature_vector[x][4]-avg)**2 + (feature_vector[x][5]-avg)**2 + (feature_vector[x][6]-avg)**2 + (feature_vector[x][7]-avg)**2
+            count += 4
+            if feature_vector[x][2] <= 25:
+                total_sum += (feature_vector[x][3]-avg)**2
+                count += 1
+
+
+    return math.sqrt(total_sum / count)
+
+'''
+calculates standard deviation and mean
+'''
+def get_crime_stats(feature_vector):
+
+    avg = get_crime_mean(feature_vector)
+    print avg
+
+    stdev = get_crime_standard_deviation(feature_vector, avg)
+    print stdev
+
+    return avg + (2*stdev)
+
+
+def write_features_to_file(feature_vector, classifier_limit):
+    with open('test_train_data.csv', 'w') as mycsvfile:
+        thedatawriter = csv.writer(mycsvfile)
+        counter = 0
+        for row in feature_vector:
+            if feature_vector[row][20] != 0:
+                xbin = row[0]
+                ybin = row[1]
+                weeknum = row[2]
+
+                if weeknum == 52:
+                    continue
+
+                god_vector_this_week = feature_vector[(xbin, ybin, weeknum,)]
+                god_vector_last_week = feature_vector[(xbin, ybin, (weeknum - 1) % 52,)]
+                god_vector_2_weeks = feature_vector[(xbin, ybin, (weeknum - 2) % 52,)]
+                god_vector_next_week = feature_vector[(xbin, ybin, (weeknum + 1) % 52,)]
+
+                year_2014 = get_feature_vectors(5, god_vector_this_week, god_vector_last_week, god_vector_2_weeks, god_vector_next_week, classifier_limit)
+                thedatawriter.writerow(year_2014)
+                year_2015 = get_feature_vectors(4, god_vector_this_week, god_vector_last_week, god_vector_2_weeks, god_vector_next_week, classifier_limit)
+                thedatawriter.writerow(year_2015)
+
+                if weeknum < 25:
+                    year_2016 = get_feature_vectors(3, god_vector_this_week, god_vector_last_week, god_vector_2_weeks, god_vector_next_week, classifier_limit)
+                    thedatawriter.writerow(year_2016)
+
+                if counter%10000 == 0:
+                    print counter/10000
+
+                counter += 1
 
 def main():
-    fv = Feature_Vector(0)
-    fv.initialize_feature_dict()
-
-    csv_file = fv.load_file('countable_data.csv', 8)
-    lookup_file = fv.load_file('../date_lookup_table.csv', 3)
-    lookup_dict = fv.lookup_to_dict(lookup_file)
-
-    fv.get_call_count(csv_file, lookup_dict)
-    fv.write_to_file()
 
 
-if __name__ == "__main__":
+    feature_vector = open_the_file()
+    print 'File opened'
+    print 'Calculating training and testing data'
+    classifier_limit = get_crime_stats(feature_vector)
+
+    write_features_to_file(feature_vector, classifier_limit)
+
+
+
+if __name__ == '__main__':
     main()
