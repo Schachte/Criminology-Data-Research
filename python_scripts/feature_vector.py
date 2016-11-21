@@ -127,6 +127,13 @@ class Feature_Vector:
 
         self.update_sum_features()
 
+        with open('rad_0_data.csv', 'w') as mycsvfile:
+            thedatawriter = csv.writer(mycsvfile)
+            for index,row in enumerate(self.feature_dict):
+                thedatawriter.writerow(self.feature_dict[row])
+                if (index > 1000):
+                    break
+
         print("\n\nRADIUS 0 COMPUTATION COMPLETE\n\n")
 
         self.calc_radii()
