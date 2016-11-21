@@ -193,16 +193,17 @@ class Feature_Vector:
     def update_week(self, xbin, ybin, wk_no, yr, total_call, feature_location):
         '''Update the total call sum for each respective week'''
 
-        if(yr == '16'):
+        if(yr == 2016):
             self.feature_dict[(xbin, ybin, wk_no)][feature_location] += total_call
-        elif(yr == '15'):
+        elif(yr == 2015):
             self.feature_dict[(xbin, ybin, wk_no)][feature_location+1] += total_call
-        elif(yr == '14'):
+        elif(yr == 2014):
             self.feature_dict[(xbin, ybin, wk_no)][feature_location+2] += total_call
-        elif(yr == '13'):
+        elif(yr == 2013):
             self.feature_dict[(xbin, ybin, wk_no)][feature_location+3] += total_call
-        else:
+        elif(yr == 2012):
             self.feature_dict[(xbin, ybin, wk_no)][feature_location+4] += total_call
+
 
     def get_weeks_to_update(self,wk_no, weeks_forward):
         week_vector = []
