@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import f_classif
+from sklearn.linear_model import LogisticRegression
 from sklearn import svm
 import math
 import random
@@ -41,7 +42,7 @@ def open_the_file():
 
 	return feature_vector
 
-def makeModelandPrediction(trainData, trainLabel, testData):
+def SVM_PRED(trainData, trainLabel, testData):
 
 	X = trainData
 	y = trainLabel
@@ -67,6 +68,34 @@ def makeModelandPrediction(trainData, trainLabel, testData):
 		shuffle=True,
 		verbose=10, 
 		warm_start=False)
+
+	return clf.predict(testData)
+
+
+def LOGISTIC_REG_PRED(trainData, trainLabel, testData):
+
+	X = trainData
+	y = trainLabel
+	# rbf_feature = RBFSampler(gamma=1, random_state=1)
+	# X_features = rbf_feature.fit_transform(X)
+	clf = LogisticRegression()
+	clf.fit(trainData, trainLabel)
+	LogisticRegression(
+    penalty='l2',
+    dual=False,
+    tol=0.0001,
+    C=1.0,
+    fit_intercept=True,
+    intercept_scaling=1,
+    class_weight=None,
+    random_state=None,
+    solver='liblinear',
+    max_iter=1,
+    multi_class='ovr',
+    verbose=10,
+    warm_start=False,
+    n_jobs=1
+    )
 
 	return clf.predict(testData)
 
@@ -173,7 +202,6 @@ def calcAccuracyFalseNegative(prediction, testLabel):
 
 
 def printAllErrors(prediction, testLabel):
-
 	print('ORIGINAL CALCACCURACY')
 	calcAccuracy(prediction, testLabel)
 	print('TREVOR CALCACCURACY')
@@ -189,7 +217,7 @@ def main():
 	while(1):
 		print('The number of keys is %d'%(len(data)))
 		trainData, trainLabel, testData, testLabel = splitIntoTrainTest(data, .7)
-		prediction = makeModelandPrediction(trainData, trainLabel, testData)
+		prediction = svm.SVM_PRED(trainData, trainLabel, testData)
 
 
 # main()
