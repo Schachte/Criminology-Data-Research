@@ -151,7 +151,7 @@ class Feature_Vector:
             for current_radius in range(1, radii + 1):
                 for y_range in range(0,current_radius+1):
                     for x_range in range(0,current_radius+1):
-                        offset = 3 + 18*current_radius
+                        offset = 3 + 18*current_radius #ERRRRRRROOOOOOORRRRRRRR Trevor this needs to not be 3
 
                         #Taken care of (0, 0)
                         if (x_range == 0 and y_range == 0):

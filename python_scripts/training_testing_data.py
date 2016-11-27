@@ -253,7 +253,7 @@ def get_crime_stats(feature_vector):
     stdev = get_crime_standard_deviation(feature_vector, avg)
     print stdev
 
-    return avg + (2*stdev)
+    return avg + (1*stdev)
 
 
 def write_features_to_file(feature_vector, classifier_limit):
@@ -292,11 +292,17 @@ def main():
 
     print("Test train")
     feature_vector = open_the_file()
+    xbin = 151
+    ybin = 162
+    wkNm = 6
+    tup = (xbin, ybin, wkNm)
+    print feature_vector[tup]
+
     print 'File opened'
     print 'Calculating training and testing data'
-    classifier_limit = get_crime_stats(feature_vector)
+    #classifier_limit = get_crime_stats(feature_vector)
 
-    write_features_to_file(feature_vector, classifier_limit)
+    #write_features_to_file(feature_vector, classifier_limit)
 
 
 if __name__ == '__main__':

@@ -48,25 +48,25 @@ def SVM_PRED(trainData, trainLabel, testData):
 	y = trainLabel
 	# rbf_feature = RBFSampler(gamma=1, random_state=1)
 	# X_features = rbf_feature.fit_transform(X)
-	clf = SGDClassifier()   
+	clf = SGDClassifier()
 	clf.fit(trainData, trainLabel)
 	SGDClassifier(
-		alpha=.9, 
-		average=False, 
-		class_weight=None, 
+		alpha=.9,
+		average=False,
+		class_weight=None,
 		epsilon=0.1,
-		eta0=0.0, 
-		fit_intercept=True, 
+		eta0=0.0,
+		fit_intercept=True,
 		l1_ratio=0.15,
-		learning_rate='optimal', 
-		loss='hinge', 
-		n_iter=5, 
+		learning_rate='optimal',
+		loss='hinge',
+		n_iter=5,
 		n_jobs=1,
-		penalty='l2', 
-		power_t=0.5, 
-		random_state=None, 
+		penalty='l2',
+		power_t=0.5,
+		random_state=None,
 		shuffle=True,
-		verbose=10, 
+		verbose=10,
 		warm_start=False)
 
 	return clf.predict(testData)
@@ -81,21 +81,21 @@ def LOGISTIC_REG_PRED(trainData, trainLabel, testData):
 	clf = LogisticRegression()
 	clf.fit(trainData, trainLabel)
 	LogisticRegression(
-    penalty='l2',
-    dual=False,
-    tol=0.0001,
-    C=1.0,
-    fit_intercept=True,
-    intercept_scaling=1,
-    class_weight=None,
-    random_state=None,
-    solver='liblinear',
-    max_iter=1,
-    multi_class='ovr',
-    verbose=10,
-    warm_start=False,
-    n_jobs=1
-    )
+	penalty='l2',
+	dual=False,
+	tol=0.0001,
+	C=1.0,
+	fit_intercept=True,
+	intercept_scaling=1,
+	class_weight=None,
+	random_state=None,
+	solver='liblinear',
+	max_iter=1,
+	multi_class='ovr',
+	verbose=10,
+	warm_start=False,
+	n_jobs=1
+	)
 
 	return clf.predict(testData)
 
@@ -165,7 +165,7 @@ def calcAccuracyTrev(prediction, testLabel):
 	count = 0.0
 	total = 0.0
 	for index in range(len(prediction)):
-		if prediction[index] == testLabel[index]:	
+		if prediction[index] == testLabel[index]:
 			if testLabel != 0:
 				total += 1.0
 				count+=1.0
@@ -173,7 +173,7 @@ def calcAccuracyTrev(prediction, testLabel):
 			total += 1.0
 	accuracy = count / total
 	print accuracy
-	
+
 def calcAccuracyFalsePositive(prediction, testLabel):
 	false_positive = 0.0
 	true_negative = 0.0
@@ -221,5 +221,3 @@ def main():
 
 
 # main()
-
-		 
