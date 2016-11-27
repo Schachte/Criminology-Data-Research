@@ -155,38 +155,18 @@ def makeBoostingPredictions(train_data, train_label, test_data, parameter):
     return predictions
 
 
-def compareParameter(train_data, k, f_r_set):
+def compareParameter(train_data, k, f_r_set, alpha_value):
     params = []
     best_PAI_param = 0
     best_PEI_param = 0
-    # params = [(160,2)]
-
-    #this needs to change for different models
-
-    for adder in range(-5, 6):
-        param = 10 ** adder
-        params.append(param)
 
     list_of_bins, list_of_bin_class = splitForCrossVal(train_data, k)
 
-    #generate parameters to walk through
-    list_of_accuracies = []
+    PAI, PEI = cross_validation(train_data, k, list_of_bins, list_of_bin_class, alpha_value, f_r_set)
 
-    for element in params:
-        PAI, PEI = cross_validation(train_data, k, list_of_bins, list_of_bin_class, element, f_r_set)
-        if PAI > best_PAI_param:
-            best_PAI_param = PAI
-            best_PAI_element = element
-        if PEI > best_PEI_param:
-            best_PEI_param = PEI
-            best_PEI_element = element
+    print alpha_value, PAI, PEI
 
-        print element, PAI, PEI
-
-        tup = (element, PAI, PEI)
-        list_of_accuracies.append(tup)
-
-    # print (best_PAI_param, best_PEI_param)
+    tup = (alpha_value, PAI, PEI)
 
 def calcAccuracy(prediction, test_label, f_r_set, validation_set):
 
@@ -215,9 +195,6 @@ def calcAccuracy(prediction, test_label, f_r_set, validation_set):
 
 
 
-
-
-
     avg_PEI = avg_PEI/count
     avg_PAI = avg_PAI/count
 
@@ -229,11 +206,6 @@ def calcAccuracy(prediction, test_label, f_r_set, validation_set):
     #else just append to that list
 
     #give that to
-
-
-
-
-
 
 
 
@@ -269,20 +241,11 @@ def my_custom_loss_func(ground_truth, predictions):
 def main():
 
 
+    input_parameter = sys.argv[1]
+
     total_actual_crime_counts = nij_accuracy.loadCrimeCounts()
-
     data, test_data = open_the_file()
-
-    compareParameter(data, 2, total_actual_crime_counts)
-
-
-
-
-# print('The number of keys is %d'%(len(data)))
-    # (trainData, trainLabel, testData, testLabel) = \
-    #     splitIntoTrainTest(data, .7)
-    # prediction = makeModelandPrediction(trainData, trainLabel, testData)
-    # print calcAccuracy(prediction, testLabel)
+    compareParameter(data, 10, total_actual_crime_counts, float(input_parameter))
 
 
 main()
