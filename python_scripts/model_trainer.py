@@ -163,9 +163,9 @@ def compareParameter(train_data, k, f_r_set):
 
     #this needs to change for different models
 
-    # for adder in range(-5, 6):
-    #     param = 10 ** adder
-    #     params.append(param)
+    for adder in range(-5, 6):
+        param = 10 ** adder
+        params.append(param)
 
     list_of_bins, list_of_bin_class = splitForCrossVal(train_data, k)
 
@@ -174,12 +174,12 @@ def compareParameter(train_data, k, f_r_set):
 
     for element in params:
         PAI, PEI = cross_validation(train_data, k, list_of_bins, list_of_bin_class, element, f_r_set)
-        # if PAI > best_PAI_param:
-        #     best_PAI_param = PAI
-        #     best_PAI_element = element
-        # if PEI > best_PEI_param:
-        #     best_PEI_param = PEI
-        #     best_PEI_element = element
+        if PAI > best_PAI_param:
+            best_PAI_param = PAI
+            best_PAI_element = element
+        if PEI > best_PEI_param:
+            best_PEI_param = PEI
+            best_PEI_element = element
 
         print element, PAI, PEI
 
