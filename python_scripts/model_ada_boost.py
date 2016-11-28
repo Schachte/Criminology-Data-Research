@@ -1,13 +1,12 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from sklearn.linear_model import SGDClassifier
-import random
 import csv
 import nij_accuracy
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import GradientBoostingRegressor
 import sys
+from sklearn.ensemble import AdaBoostRegressor
+from sklearn.tree import DecisionTreeRegressor
+import random
 
 
 def open_the_file():
@@ -66,7 +65,10 @@ def splitForCrossVal(trainData, k):
             tup = (row[79], row[78])
             if bin_dict[tup] == bin:
                 k_split_list.append(newRow)
-                k_class_list.append(row[-1])
+                if row[-1] == 0:
+                    k_class_list.append(-1)
+                else:
+                    k_class_list.append(1)
                 counter += 1
 
         bin_list.append(list(k_split_list))
@@ -100,7 +102,7 @@ def stitch_bins(bin_list, bin_index, bin_class_list):
     return training, train_class, validation, validation_class
 
 
-def cross_validation(train_data, k, list_of_bins,list_of_bin_class, parameter, f_r_set):
+def cross_validation(train_data, k, list_of_bins,list_of_bin_class, parameter, f_r_set, parameter2):
     PAI_accuracies = []
     PEI_accuracies = []
     FP_accuracies = []
@@ -111,8 +113,11 @@ def cross_validation(train_data, k, list_of_bins,list_of_bin_class, parameter, f
 
     for index in range(k):
         train_set, train_class, validation_set, validation_class = stitch_bins(list_of_bins, index, list_of_bin_class)
-        predictions = makeModelandPrediction(train_set, train_class, validation_set, parameter)
+        predictions = makeModelandPrediction(train_set, train_class, validation_set, int(parameter), int(parameter2))
         # predictions = makeBoostingPredictions(train_set, train_class, validation_set, parameter)
+
+        predictions = convertRegressorToClass(predictions)
+        validation_class = convertRegressorToClass(validation_class)
         PAI_acc, PEI_acc = calcAccuracy(predictions, validation_class, f_r_set, validation_set)
         FN_a = calcAccuracyFalseNegative(predictions, validation_class)
         FP_a = my_custom_loss_func(validation_class, predictions)
@@ -146,12 +151,23 @@ def calcWeightedAccuracies(accuracies, accuracy_weights):
     return final_accuracy
 
 
-def makeModelandPrediction(train_data, train_label, test_data, parameter):
+def convertRegressorToClass(predictions):
+    list = []
+    for index,element in enumerate(predictions):
+        if element > 0:
+            list.append(1)
+        else:
+            list.append(0)
+    return list
 
-    clf = LogisticRegression(C=parameter)
+def makeModelandPrediction(train_data, train_label, test_data, parameter, parameter2):
+
+    clf = AdaBoostRegressor(DecisionTreeRegressor(max_depth=parameter),
+                          n_estimators=parameter2)
+
     clf.fit(train_data, train_label)
-    prediction = clf.predict(test_data)
 
+    prediction = clf.predict(test_data)
 
     return prediction
 
@@ -159,7 +175,7 @@ def makeModelandPrediction(train_data, train_label, test_data, parameter):
 
 
 
-def compareParameter(train_data, k, f_r_set, alpha_value):
+def compareParameter(train_data, k, f_r_set, alpha_value, parameter2):
     params = []
     best_PAI_param = 0
     best_PEI_param = 0
@@ -167,9 +183,9 @@ def compareParameter(train_data, k, f_r_set, alpha_value):
     list_of_bins, list_of_bin_class = splitForCrossVal(train_data, k)
     #return PAI, PEI, FP, FN, Acc
 
-    PAI, PEI, FP, FN, ACC = cross_validation(train_data, k, list_of_bins, list_of_bin_class, alpha_value, f_r_set)
+    PAI, PEI, FP, FN, ACC = cross_validation(train_data, k, list_of_bins, list_of_bin_class, alpha_value, f_r_set, parameter2)
 
-    print(str(alpha_value) + "," + str(PAI) + "," + str((PEI)) + "," + str((FP)) + "," + str(FN) + "," + str(ACC))
+    print(str(alpha_value) + "," + parameter2 + "," + str(PAI) + "," + str((PEI)) + "," + str((FP)) + "," + str(FN) + "," + str(ACC))
 
 
 
@@ -263,10 +279,11 @@ def main():
 
 
     input_parameter = sys.argv[1]
+    input_parameter2 = sys.argv[2]
 
     total_actual_crime_counts = nij_accuracy.loadCrimeCounts()
     data, test_data = open_the_file()
-    compareParameter(data, 10, total_actual_crime_counts, float(input_parameter))
+    compareParameter(data, 2, total_actual_crime_counts, float(input_parameter), float(input_parameter2))
 
 
 main()

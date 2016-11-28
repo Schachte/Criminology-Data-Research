@@ -114,7 +114,7 @@ def cross_validation(train_data, k, list_of_bins,list_of_bin_class, parameter, f
         # predictions = makeBoostingPredictions(train_set, train_class, validation_set, parameter)
         PAI_acc, PEI_acc = calcAccuracy(predictions, validation_class, f_r_set, validation_set)
         FN_a = calcAccuracyFalseNegative(predictions, validation_class)
-        FP_a = my_custom_loss_func(predictions, validation_class)
+        FP_a = my_custom_loss_func(validation_class, predictions)
         ACC_a = calcAccuracyTrev(predictions, validation_class)
         FN_accuracies.append(FN_a)
         FP_accuracies.append(FP_a)

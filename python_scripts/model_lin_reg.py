@@ -1,13 +1,11 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-from sklearn.linear_model import SGDClassifier
-import random
 import csv
 import nij_accuracy
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import GradientBoostingRegressor
+from sklearn import datasets, linear_model
 import sys
+import random
 
 
 def open_the_file():
@@ -148,9 +146,14 @@ def calcWeightedAccuracies(accuracies, accuracy_weights):
 
 def makeModelandPrediction(train_data, train_label, test_data, parameter):
 
-    clf = LogisticRegression(C=parameter)
-    clf.fit(train_data, train_label)
-    prediction = clf.predict(test_data)
+    regr = linear_model.LinearRegression()
+    regr.fit(train_data,train_label)
+
+    prediction = regr.predict(test_data)
+
+
+    for index, i in enumerate(prediction):
+        prediction[index] = int(i)
 
 
     return prediction
