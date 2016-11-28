@@ -5,8 +5,7 @@ from sklearn.linear_model import SGDClassifier
 import random
 import csv
 import nij_accuracy
-from sklearn.model_selection import cross_val_score
-from sklearn.metrics import fbeta_score, make_scorer
+from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import GradientBoostingRegressor
 import sys
 
@@ -17,7 +16,6 @@ def open_the_file():
 
 
 
-    print 'Beginning Data Loading Processor..'
 
     with open('test_train_data.csv', 'rb') as myfile:
         thedatareader = csv.reader(myfile, delimiter=',')
@@ -51,7 +49,6 @@ def splitForCrossVal(trainData, k):
     bin_class_list = []
     k_class_list = []
 
-    print "beggining split for cross val"
 
     for year in range (2014, 2016):
         for week in range(0, 52):
@@ -76,7 +73,6 @@ def splitForCrossVal(trainData, k):
         bin_class_list.append(list(k_class_list))
 
 
-    print "done"
 
     return bin_list, bin_class_list
 
@@ -107,6 +103,9 @@ def stitch_bins(bin_list, bin_index, bin_class_list):
 def cross_validation(train_data, k, list_of_bins,list_of_bin_class, parameter, f_r_set):
     PAI_accuracies = []
     PEI_accuracies = []
+    FP_accuracies = []
+    FN_accuracies = []
+    ACC_accuracies = []
     accuracy_weights = []
     total_length = float(len(train_data))
 
@@ -115,15 +114,27 @@ def cross_validation(train_data, k, list_of_bins,list_of_bin_class, parameter, f
         predictions = makeModelandPrediction(train_set, train_class, validation_set, parameter)
         # predictions = makeBoostingPredictions(train_set, train_class, validation_set, parameter)
         PAI_acc, PEI_acc = calcAccuracy(predictions, validation_class, f_r_set, validation_set)
+        FN_a = calcAccuracyFalseNegative(predictions, validation_class)
+        FP_a = my_custom_loss_func(predictions, validation_class)
+        ACC_a = calcAccuracyTrev(predictions, validation_class)
+        FN_accuracies.append(FN_a)
+        FP_accuracies.append(FP_a)
+        ACC_accuracies.append(ACC_a)
         PAI_accuracies.append(PAI_acc)
         PEI_accuracies.append(PEI_acc)
         acc_weight = len(validation_set) / total_length
         accuracy_weights.append(acc_weight)
 
-        final_PAI_acc = calcWeightedAccuracies(PAI_accuracies, accuracy_weights)
-        final_PEI_acc = calcWeightedAccuracies(PEI_accuracies, accuracy_weights)
 
-    return final_PAI_acc, final_PEI_acc
+    final_FP = calcWeightedAccuracies(FP_accuracies, accuracy_weights)
+    final_FN = calcWeightedAccuracies(FN_accuracies, accuracy_weights)
+    final_ACC = calcWeightedAccuracies(ACC_accuracies, accuracy_weights)
+    final_PAI_acc = calcWeightedAccuracies(PAI_accuracies, accuracy_weights)
+    final_PEI_acc = calcWeightedAccuracies(PEI_accuracies, accuracy_weights)
+
+
+    #return PAI, PEI, FP, FN, Acc
+    return final_PAI_acc, final_PEI_acc, final_FP, final_FN, final_ACC
 
 def calcWeightedAccuracies(accuracies, accuracy_weights):
 
@@ -137,28 +148,12 @@ def calcWeightedAccuracies(accuracies, accuracy_weights):
 
 def makeModelandPrediction(train_data, train_label, test_data, parameter):
 
-    # print "making sgd model"
-
-    clf = LogisticRegression(
-        penalty='l2',
-        dual=False,
-        tol=0.0001,
-        C=1.0,
-        fit_intercept=True,
-        intercept_scaling=1,
-        class_weight=None,
-        random_state=None,
-        solver='liblinear',
-        max_iter=1,
-        multi_class='ovr',
-        verbose=10,
-        warm_start=False,
-        n_jobs=1
-    )
-    clf.fit(trainData, trainLabel)
+    clf = LogisticRegression()
+    clf.fit(train_data, train_label)
+    prediction = clf.predict(test_data)
 
 
-    return clf.predict(testData)
+    return prediction
 
 
 
@@ -170,12 +165,13 @@ def compareParameter(train_data, k, f_r_set, alpha_value):
     best_PEI_param = 0
 
     list_of_bins, list_of_bin_class = splitForCrossVal(train_data, k)
+    #return PAI, PEI, FP, FN, Acc
 
-    PAI, PEI = cross_validation(train_data, k, list_of_bins, list_of_bin_class, alpha_value, f_r_set)
+    PAI, PEI, FP, FN, ACC = cross_validation(train_data, k, list_of_bins, list_of_bin_class, alpha_value, f_r_set)
 
-    print alpha_value, PAI, PEI
+    print(str(alpha_value) + "," + str(PAI) + "," + str((PEI)) + "," + str((FP)) + "," + str(FN) + "," + str(ACC))
 
-    tup = (alpha_value, PAI, PEI)
+
 
 def calcAccuracy(prediction, test_label, f_r_set, validation_set):
 
@@ -218,18 +214,7 @@ def calcAccuracy(prediction, test_label, f_r_set, validation_set):
 
 
 
-def crossVal(data, classification):
-    clf = SGDClassifier(alpha=0.0001, average=False, class_weight=None, epsilon=0.1,
-       eta0=0.0, fit_intercept=True, l1_ratio=0.15,
-       learning_rate='optimal', loss='hinge', n_iter=5, n_jobs=1,
-       penalty='l2', power_t=0.5, random_state=None, shuffle=True,
-       verbose=0, warm_start=False)
-    score = make_scorer(my_custom_loss_func, greater_is_better=True)
-    scores = cross_val_score(clf, data, classification, cv=10, scoring=score)
-    print scores
-    print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
-
-
+#FALSE POSITIVE RATE
 def my_custom_loss_func(ground_truth, predictions):
     false_positive = 0.0
     true_negative = 0.0
@@ -244,11 +229,39 @@ def my_custom_loss_func(ground_truth, predictions):
     return rate
 
 
+#FALSE NEGATIVE RATE
+def calcAccuracyFalseNegative(prediction, testLabel):
+    false_negative = 0.0
+    true_positive = 0.0
+    for index in range(len(prediction)):
+        if testLabel[index] == 1:
+            true_positive += 1
+
+        if prediction[index] != testLabel[index] and testLabel[index] == 1:
+            false_negative += 1
+
+    rate = false_negative / (false_negative + true_positive)
+    return rate
 
 
+#Trev acc baby!!!! hi
+def calcAccuracyTrev(prediction, testLabel):
+    count = 0.0
+    total = 0.0
+    for index in range(len(prediction)):
+        if prediction[index] == testLabel[index]:
+            if testLabel != 0:
+                total += 1.0
+                count+=1.0
+        else:
+            total += 1.0
+    accuracy = count / total
+    return accuracy
 
 def main():
+    #return PAI, PEI, FP, FN, Acc
 
+    print ("PAI" + "," + "PEI" + "," + "FP" + "," + "FN" +"," + "ACC")
 
     input_parameter = sys.argv[1]
 
